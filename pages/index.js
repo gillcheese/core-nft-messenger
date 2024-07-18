@@ -31,8 +31,8 @@ export default function Home() {
       return;
     }
 
-    if (!recipientAddress) {
-      alert("Please enter a recipient address.");
+    if (!recipientAddress || recipientAddress.length !== 44) {
+      alert("Please enter a valid Solana address for the recipient.");
       return;
     }
 
@@ -59,53 +59,56 @@ export default function Home() {
   };
 
   return (
-    <div className="space-y-6 p-4">
-      <h1 className="text-3xl font-bold text-center">Text to NFT</h1>
-      
-      <div className="flex justify-center">
-        <WalletMultiButton />
-      </div>
-
-      <div className="max-w-md mx-auto">
-        <TextInput onTextChange={handleTextChange} />
-      </div>
-
-      <TextToImage text={text} onImageGenerated={handleImageGenerated} />
-
-      {imageUrl && (
-        <div className="mt-4">
-          <img src={imageUrl} alt="Generated PNG" className="mx-auto border rounded-lg shadow-md" />
+    <div className="min-h-screen bg-gray-100 py-6 flex flex-col justify-center sm:py-12">
+      <div className="relative py-3 sm:max-w-xl sm:mx-auto">
+        <div className="absolute inset-0 bg-gradient-to-r from-cyan-400 to-light-blue-500 shadow-lg transform -skew-y-6 sm:skew-y-0 sm:-rotate-6 sm:rounded-3xl"></div>
+        <div className="relative px-4 py-10 bg-white shadow-lg sm:rounded-3xl sm:p-20">
+          <div className="max-w-md mx-auto">
+            <div>
+              <h1 className="text-2xl font-semibold text-center mb-2">BOOP!</h1>
+            </div>
+            <div className="divide-y divide-gray-200">
+              <div className="py-2 text-base leading-6 space-y-4 text-gray-700 sm:text-lg sm:leading-7">
+                <div className="flex justify-center mb-4">
+                  <WalletMultiButton className="!bg-blue-500 hover:!bg-blue-600" />
+                </div>
+                <div className="mb-4">
+                  <TextInput onTextChange={handleTextChange} />
+                </div>
+                <TextToImage text={text} onImageGenerated={handleImageGenerated} />
+                {imageUrl && (
+                  <div className="mt-4">
+                    <img src={imageUrl} alt="Generated PNG" className="mx-auto border rounded-lg shadow-md w-full max-w-xs h-auto" />
+                  </div>
+                )}
+                <div className="mt-4">
+                  <input
+                    type="text"
+                    placeholder="Recipient Address"
+                    value={recipientAddress}
+                    onChange={handleRecipientChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div className="flex justify-center mt-6">
+                  <button 
+                    onClick={handleMintNFT} 
+                    disabled={!imageUrl || isLoading || !wallet.connected || !recipientAddress}
+                    className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed transition duration-200"
+                  >
+                    {isLoading ? 'Minting and Sending...' : 'Mint and Send NFT'}
+                  </button>
+                </div>
+              </div>
+              {nftResult && (
+                <div className="pt-6 text-base leading-6 font-bold sm:text-lg sm:leading-7">
+                  <p className="text-green-600">NFT minted and sent!</p>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
-      )}
-
-      <div className="max-w-md mx-auto">
-        <input
-          type="text"
-          placeholder="Recipient Address"
-          value={recipientAddress}
-          onChange={handleRecipientChange}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
       </div>
-
-      <div className="flex justify-center">
-        <button 
-          onClick={handleMintNFT} 
-          disabled={!imageUrl || isLoading || !wallet.connected || !recipientAddress}
-          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:bg-gray-400"
-        >
-          {isLoading ? 'Minting and Sending...' : 'Mint and Send NFT'}
-        </button>
-      </div>
-
-      {nftResult && (
-        <div className="mt-4 text-center">
-          <p className="text-green-600">NFT minted and sent!</p>
-          <p>Mint Transaction ID: {nftResult.mintResult.signature}</p>
-          <p>Transfer Transaction ID: {nftResult.transferResult.signature}</p>
-          <p>Metadata URI: {nftResult.uri}</p>
-        </div>
-      )}
     </div>
   );
 }
