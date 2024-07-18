@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import TextInput from '../components/TextInput';
 import TextToImage from '../components/TextToImage';
+import MintingProgress from '../components/MintingProgress';
 import { uploadAndMintNFT } from '../utils/metaplex';
 import { useSolana } from '../contexts/SolanaContext';
 import { publicKey } from '@metaplex-foundation/umi';
@@ -12,6 +13,12 @@ export default function Home() {
   const [recipientAddress, setRecipientAddress] = useState('');
   const [nftResult, setNftResult] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [mintingSteps, setMintingSteps] = useState([
+    { name: 'Uploading image to Arweave', completed: false, inProgress: false },
+    { name: 'Uploading metadata to Arweave', completed: false, inProgress: false },
+    { name: 'Minting NFT', completed: false, inProgress: false },
+    { name: 'Sending NFT', completed: false, inProgress: false },
+  ]);
   const { wallet, umi } = useSolana();
 
   const handleTextChange = (newText) => {
@@ -26,13 +33,22 @@ export default function Home() {
     setRecipientAddress(event.target.value);
   };
 
+  const updateMintingStep = (stepIndex, status) => {
+    setMintingSteps(prevSteps => 
+      prevSteps.map((step, index) => 
+        index === stepIndex 
+          ? { ...step, completed: status === 'completed', inProgress: status === 'inProgress' }
+          : step
+      )
+    );
+  };
+
   const handleMintNFT = async () => {
     if (!wallet.connected || !umi) {
       alert("Please connect your wallet first.");
       return;
     }
 
-    // Validate Solana address using Umi
     let isValidAddress = false;
     try {
       publicKey(recipientAddress);
@@ -46,25 +62,27 @@ export default function Home() {
       return;
     }
 
-    const confirmed = window.confirm("You are about to mint an NFT on the Solana mainnet. This will incur real transaction costs. Are you sure you want to continue?");
-    if (!confirmed) {
-      return;
-    }
-
     setIsLoading(true);
+    setNftResult(null);
     try {
       const response = await fetch(imageUrl);
       const blob = await response.blob();
       const arrayBuffer = await blob.arrayBuffer();
 
+      updateMintingStep(0, 'inProgress');
       const { mintResult, transferResult, uri } = await uploadAndMintNFT(
         umi,
         new Uint8Array(arrayBuffer),
-        'My Text NFT',
+        'Message',
         text,
-        recipientAddress
+        recipientAddress,
+        (step) => {
+          updateMintingStep(step, 'completed');
+          updateMintingStep(step + 1, 'inProgress');
+        }
       );
       setNftResult({ mintResult, transferResult, uri });
+      updateMintingStep(3, 'completed');
     } catch (error) {
       console.error("Error in handleMintNFT:", error);
       alert("Error minting and sending NFT. Please try again.");
@@ -79,8 +97,8 @@ export default function Home() {
         <div className="absolute inset-0 bg-gradient-to-r from-cyan-400 to-light-blue-500 shadow-lg transform -skew-y-6 sm:skew-y-0 sm:-rotate-6 sm:rounded-3xl"></div>
         <div className="relative px-4 py-10 bg-white shadow-lg sm:rounded-3xl sm:p-20">
           <div className="max-w-md mx-auto">
-            <div>
-              <h1 className="text-2xl font-semibold text-center mb-6">BOOP!</h1>
+            <div className="text-center">
+              <h1 className="text-2xl font-semibold mb-6">BOOP!</h1>
             </div>
             <div className="divide-y divide-gray-200">
               <div className="py-8 text-base leading-6 space-y-4 text-gray-700 sm:text-lg sm:leading-7">
@@ -114,6 +132,7 @@ export default function Home() {
                     {isLoading ? 'Minting and Sending...' : 'Mint and Send NFT'}
                   </button>
                 </div>
+                {isLoading && <MintingProgress steps={mintingSteps} />}
               </div>
               {nftResult && (
                 <div className="pt-6 text-base leading-6 font-bold sm:text-lg sm:leading-7">

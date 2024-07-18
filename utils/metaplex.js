@@ -21,7 +21,7 @@ export const initializeUmi = (wallet) => {
   return umi;
 };
 
-export const uploadAndMintNFT = async (umi, imageBuffer, name, description, recipientAddress) => {
+export const uploadAndMintNFT = async (umi, imageBuffer, name, description, recipientAddress, updateStep) => {
   if (!umi) {
     throw new Error("Umi not initialized. Please connect wallet first.");
   }
@@ -35,6 +35,7 @@ export const uploadAndMintNFT = async (umi, imageBuffer, name, description, reci
     // Upload the image
     const [imageUri] = await umi.uploader.upload([file]);
     console.log("Image uploaded, URI:", imageUri);
+    updateStep(0);  // Complete step 0
 
     // Upload the metadata
     const uri = await umi.uploader.uploadJson({
@@ -43,6 +44,7 @@ export const uploadAndMintNFT = async (umi, imageBuffer, name, description, reci
       image: imageUri,
     });
     console.log("Metadata uploaded, URI:", uri);
+    updateStep(1);  // Complete step 1
 
     // Generate a new signer for the asset
     const assetSigner = generateSigner(umi);
@@ -55,6 +57,7 @@ export const uploadAndMintNFT = async (umi, imageBuffer, name, description, reci
     }).sendAndConfirm(umi);
 
     console.log("NFT minted, result:", mintResult);
+    updateStep(2);  // Complete step 2
 
     // Transfer the NFT to the recipient
     const transferResult = await transferV1(umi, {
@@ -63,6 +66,7 @@ export const uploadAndMintNFT = async (umi, imageBuffer, name, description, reci
     }).sendAndConfirm(umi);
 
     console.log("NFT transferred, result:", transferResult);
+    updateStep(3);  // Complete step 3
 
     return { mintResult, transferResult, uri };
   } catch (error) {
