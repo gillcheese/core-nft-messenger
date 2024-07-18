@@ -4,6 +4,7 @@ import TextInput from '../components/TextInput';
 import TextToImage from '../components/TextToImage';
 import { uploadAndMintNFT } from '../utils/metaplex';
 import { useSolana } from '../contexts/SolanaContext';
+import { publicKey } from '@metaplex-foundation/umi';
 
 export default function Home() {
   const [text, setText] = useState('');
@@ -31,8 +32,22 @@ export default function Home() {
       return;
     }
 
-    if (!recipientAddress || recipientAddress.length !== 44) {
+    // Validate Solana address using Umi
+    let isValidAddress = false;
+    try {
+      publicKey(recipientAddress);
+      isValidAddress = true;
+    } catch (error) {
+      console.error("Invalid address:", error);
+    }
+
+    if (!isValidAddress) {
       alert("Please enter a valid Solana address for the recipient.");
+      return;
+    }
+
+    const confirmed = window.confirm("You are about to mint an NFT on the Solana mainnet. This will incur real transaction costs. Are you sure you want to continue?");
+    if (!confirmed) {
       return;
     }
 
@@ -65,10 +80,10 @@ export default function Home() {
         <div className="relative px-4 py-10 bg-white shadow-lg sm:rounded-3xl sm:p-20">
           <div className="max-w-md mx-auto">
             <div>
-              <h1 className="text-2xl font-semibold text-center mb-2">BOOP!</h1>
+              <h1 className="text-2xl font-semibold text-center mb-6">BOOP!</h1>
             </div>
             <div className="divide-y divide-gray-200">
-              <div className="py-2 text-base leading-6 space-y-4 text-gray-700 sm:text-lg sm:leading-7">
+              <div className="py-8 text-base leading-6 space-y-4 text-gray-700 sm:text-lg sm:leading-7">
                 <div className="flex justify-center mb-4">
                   <WalletMultiButton className="!bg-blue-500 hover:!bg-blue-600" />
                 </div>
