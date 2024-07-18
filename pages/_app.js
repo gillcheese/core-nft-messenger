@@ -10,7 +10,7 @@ require('@solana/wallet-adapter-react-ui/styles.css');
 require('../styles/globals.css');
 
 function MyApp({ Component, pageProps }) {
-  const network = WalletAdapterNetwork.Devnet;
+  const network = WalletAdapterNetwork.MainnetBeta;
   const endpoint = useMemo(() => clusterApiUrl(network), [network]);
 
   const wallets = useMemo(

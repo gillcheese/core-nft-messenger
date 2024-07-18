@@ -8,24 +8,23 @@ export function SolanaProvider({ children }) {
   const wallet = useWallet();
   const [umi, setUmi] = useState(null);
 
-  useEffect(() => {
-    console.log("Wallet connection changed:", wallet.connected);
-    console.log("Wallet public key:", wallet.publicKey?.toString());
-
-    if (wallet.connected && wallet.publicKey) {
+useEffect(() => {
+  if (wallet.connected && wallet.publicKey) {
+    (async () => {
       try {
         console.log("Attempting to initialize Umi");
-        const umiInstance = initializeUmi(wallet);
+        const umiInstance = await initializeUmi(wallet);
         console.log("Umi initialized successfully");
         setUmi(umiInstance);
       } catch (error) {
         console.error("Error initializing Umi:", error);
       }
-    } else {
-      console.log("Resetting Umi to null");
-      setUmi(null);
-    }
-  }, [wallet.connected, wallet.publicKey]);
+    })();
+  } else {
+    console.log("Resetting Umi to null");
+    setUmi(null);
+  }
+}, [wallet.connected, wallet.publicKey]);
 
   return (
     <SolanaContext.Provider value={{ wallet, umi }}>

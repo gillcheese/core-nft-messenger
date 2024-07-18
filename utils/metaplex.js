@@ -4,7 +4,24 @@ import { walletAdapterIdentity } from '@metaplex-foundation/umi-signer-wallet-ad
 import { irysUploader } from '@metaplex-foundation/umi-uploader-irys';
 import { generateSigner, publicKey, createGenericFile } from '@metaplex-foundation/umi';
 
-export const initializeUmi = (wallet) => {
+let rpcUrl = null;
+
+async function getRpcUrl() {
+  if (rpcUrl) return rpcUrl;
+  
+  try {
+    const response = await fetch('/api/getRpcUrl');
+    const data = await response.json();
+    rpcUrl = data.rpcUrl;
+  } catch (error) {
+    console.error('Failed to fetch RPC URL, using fallback:', error);
+    rpcUrl = clusterApiUrl('mainnet-beta');
+  }
+  
+  return rpcUrl;
+}
+
+export const initializeUmi = async (wallet) => {
   if (!wallet.publicKey) {
     throw new Error("Wallet is not connected");
   }
@@ -12,12 +29,15 @@ export const initializeUmi = (wallet) => {
   const publicKeyString = wallet.publicKey.toString();
   console.log("Initializing Umi with wallet public key:", publicKeyString);
 
-  const umi = createUmi('https://api.devnet.solana.com')
+  const rpcUrl = await getRpcUrl();
+  
+
+  const umi = createUmi(rpcUrl)
     .use(mplCore())
     .use(walletAdapterIdentity(wallet))
-    .use(irysUploader());
+    .use(irysUploader({ address: 'https://node1.irys.xyz' }));
 
-  console.log("Umi instance created with wallet identity and Irys uploader");
+  console.log("Umi instance created with wallet identity and Irys uploader for mainnet");
   return umi;
 };
 
