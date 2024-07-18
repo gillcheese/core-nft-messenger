@@ -8,6 +8,7 @@ import { useSolana } from '../contexts/SolanaContext';
 export default function Home() {
   const [text, setText] = useState('');
   const [imageUrl, setImageUrl] = useState('');
+  const [recipientAddress, setRecipientAddress] = useState('');
   const [nftResult, setNftResult] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const { wallet, umi } = useSolana();
@@ -20,24 +21,38 @@ export default function Home() {
     setImageUrl(url);
   };
 
+  const handleRecipientChange = (event) => {
+    setRecipientAddress(event.target.value);
+  };
+
   const handleMintNFT = async () => {
     if (!wallet.connected || !umi) {
       alert("Please connect your wallet first.");
       return;
     }
 
+    if (!recipientAddress) {
+      alert("Please enter a recipient address.");
+      return;
+    }
+
     setIsLoading(true);
     try {
-      // Convert the data URL to an ArrayBuffer
       const response = await fetch(imageUrl);
       const blob = await response.blob();
       const arrayBuffer = await blob.arrayBuffer();
 
-      const { result, uri } = await uploadAndMintNFT(umi, new Uint8Array(arrayBuffer), 'My Text NFT', text);
-      setNftResult({ result, uri });
+      const { mintResult, transferResult, uri } = await uploadAndMintNFT(
+        umi,
+        new Uint8Array(arrayBuffer),
+        'My Text NFT',
+        text,
+        recipientAddress
+      );
+      setNftResult({ mintResult, transferResult, uri });
     } catch (error) {
       console.error("Error in handleMintNFT:", error);
-      alert("Error minting NFT. Please try again.");
+      alert("Error minting and sending NFT. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -63,20 +78,31 @@ export default function Home() {
         </div>
       )}
 
+      <div className="max-w-md mx-auto">
+        <input
+          type="text"
+          placeholder="Recipient Address"
+          value={recipientAddress}
+          onChange={handleRecipientChange}
+          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+      </div>
+
       <div className="flex justify-center">
         <button 
           onClick={handleMintNFT} 
-          disabled={!imageUrl || isLoading || !wallet.connected}
+          disabled={!imageUrl || isLoading || !wallet.connected || !recipientAddress}
           className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:bg-gray-400"
         >
-          {isLoading ? 'Minting...' : 'Mint NFT'}
+          {isLoading ? 'Minting and Sending...' : 'Mint and Send NFT'}
         </button>
       </div>
 
       {nftResult && (
         <div className="mt-4 text-center">
-          <p className="text-green-600">NFT minted!</p>
-          <p>Transaction ID: {nftResult.result.signature}</p>
+          <p className="text-green-600">NFT minted and sent!</p>
+          <p>Mint Transaction ID: {nftResult.mintResult.signature}</p>
+          <p>Transfer Transaction ID: {nftResult.transferResult.signature}</p>
           <p>Metadata URI: {nftResult.uri}</p>
         </div>
       )}
