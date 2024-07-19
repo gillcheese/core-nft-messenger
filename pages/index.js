@@ -13,6 +13,7 @@ export default function Home() {
   const [recipientAddress, setRecipientAddress] = useState('');
   const [nftResult, setNftResult] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [showInfoPopup, setShowInfoPopup] = useState(false);
   const [mintingSteps, setMintingSteps] = useState([
     { name: 'Uploading image to Arweave', completed: false, inProgress: false },
     { name: 'Uploading metadata to Arweave', completed: false, inProgress: false },
@@ -91,15 +92,58 @@ export default function Home() {
     }
   };
 
+  const toggleInfoPopup = () => {
+    setShowInfoPopup(!showInfoPopup);
+  };
+
   return (
     <div className="min-h-screen bg-gray-100 py-6 flex flex-col justify-center sm:py-12">
       <div className="relative py-3 sm:max-w-xl sm:mx-auto">
         <div className="absolute inset-0 bg-gradient-to-r from-cyan-400 to-light-blue-500 shadow-lg transform -skew-y-6 sm:skew-y-0 sm:-rotate-6 sm:rounded-3xl"></div>
         <div className="relative px-4 py-10 bg-white shadow-lg sm:rounded-3xl sm:p-20">
+          <div className="absolute top-2 right-2">
+            <button 
+              onClick={toggleInfoPopup}
+              className="text-gray-500 hover:text-gray-700 focus:outline-none"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </button>
+          </div>
+
+          {showInfoPopup && (
+  <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50" onClick={toggleInfoPopup}>
+    <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white" onClick={e => e.stopPropagation()}>
+      <div className="mt-3 text-left">
+        <h3 className="text-lg leading-6 font-medium text-gray-900">Transactions</h3>
+        <div className="mt-2 px-7 py-3">
+          <p className="text-sm text-gray-500">
+            There are several transactions to approve:<br/>
+            <br/>
+            1. Upload image to Arweave<br/>
+            2. Upload metadata to Arweave<br/>
+            3. Mint and Send<br/>
+            Please note there is a 0.001 SOL fee
+          </p>
+        </div>
+        <div className="items-center px-4 py-3">
+          <button
+            onClick={toggleInfoPopup}
+            className="px-4 py-2 bg-blue-500 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-300"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+)}
+
           <div className="max-w-md mx-auto">
-           <div className="text-center">
-  <h1 className="text-6xl font-reenie mb-0">Boop.</h1>
-</div>
+            <div className="text-center">
+              <h1 className="text-6xl font-josefin mb-0">Boop.</h1>
+            </div>
             <div className="divide-y divide-gray-200">
               <div className="py-8 text-base leading-6 space-y-4 text-gray-700 sm:text-lg sm:leading-7">
                 <div className="flex justify-center mb-4">
