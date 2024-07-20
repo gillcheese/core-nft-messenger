@@ -32,7 +32,6 @@ export const initializeUmi = async (wallet) => {
 
   const rpcUrl = await getRpcUrl();
   
-
   const umi = createUmi(rpcUrl)
     .use(mplCore())
     .use(walletAdapterIdentity(wallet))
@@ -46,15 +45,36 @@ export const uploadAndMintNFT = async (umi, imageBuffer, name, description, reci
   if (!umi) {
     throw new Error("Umi not initialized. Please connect wallet first.");
   }
+  
+  console.log("uploadAndMintNFT called with:");
+  console.log("umi:", umi);
+  console.log("imageBuffer:", imageBuffer ? `[Buffer of length ${imageBuffer.length}]` : 'undefined');
+  console.log("name:", name);
+  console.log("description:", description);
+  console.log("recipientAddress:", recipientAddress);
+  
+  if (!imageBuffer || !imageBuffer.length) {
+    throw new Error("Invalid or empty imageBuffer");
+  }
+
   try {
     console.log("Starting NFT upload and minting process");
     
-    // Upload image and metadata (same as before)
-    const file = createGenericFile(imageBuffer, 'image.png', { contentType: 'image/png' });
+    // Upload image
+    let file;
+    try {
+      file = createGenericFile(imageBuffer, 'image.png', { contentType: 'image/png' });
+      console.log("Generic file created successfully");
+    } catch (error) {
+      console.error("Error creating generic file:", error);
+      throw error;
+    }
+
     const [imageUri] = await umi.uploader.upload([file]);
     console.log("Image uploaded, URI:", imageUri);
     updateStep(0);
 
+    // Upload metadata
     const uri = await umi.uploader.uploadJson({
       name: name,
       description: description,
@@ -72,49 +92,68 @@ export const uploadAndMintNFT = async (umi, imageBuffer, name, description, reci
     console.log("Metadata uploaded, URI:", uri);
     updateStep(1);
 
-    // Generate a new signer for the asset
-    const assetSigner = generateSigner(umi);
-
-    // Create a transaction builder
-    let tx = transactionBuilder();
-
-    // Add create instruction
-    tx = tx.add(
-      create(umi, {
-        asset: assetSigner,
-        name: name,
-        uri: uri,
-        sellerFeeBasisPoints: 0, // 0% royalties
-      })
-    );
-
-    // Add transfer NFT instruction
-    tx = tx.add(
-      transferV1(umi, {
-        asset: assetSigner.publicKey,
-        newOwner: publicKey(recipientAddress),
-      })
-    );
-
-    // Add fee transfer instruction
-    const feeAmount = 0.001; // 0.001 SOL
+    // Check fee recipient address
     const feeRecipientAddress = process.env.NEXT_PUBLIC_FEE_RECIPIENT_ADDRESS;
-    tx = tx.add(
-      transferSol(umi, {
-        source: umi.identity,
-        destination: publicKey(feeRecipientAddress),
-        amount: sol(feeAmount),
-      })
-    );
+    if (!feeRecipientAddress) {
+      console.error("Fee recipient address is not set");
+      throw new Error("Fee recipient address is not configured");
+    }
+    console.log("Fee recipient address:", feeRecipientAddress);
 
-    // Send and confirm the bundled transaction
-    const result = await tx.sendAndConfirm(umi);
+    try {
+      // Generate a new signer for the asset
+      const assetSigner = generateSigner(umi);
+      console.log("Asset signer generated:", assetSigner.publicKey);
 
-    console.log("Transaction completed, result:", result);
-    updateStep(2); // Complete step 2
-    updateStep(3); // Complete step 3 (both are done in one transaction now)
+      // Create a transaction builder
+      let tx = transactionBuilder();
+      console.log("Transaction builder created");
 
-    return { result, uri };
+      // Add create instruction
+      tx = tx.add(
+        create(umi, {
+          asset: assetSigner,
+          name: name,
+          uri: uri,
+          sellerFeeBasisPoints: 0, // 0% royalties
+        })
+      );
+      console.log("Create instruction added to transaction");
+
+      // Add transfer NFT instruction
+      tx = tx.add(
+        transferV1(umi, {
+          asset: assetSigner.publicKey,
+          newOwner: publicKey(recipientAddress),
+        })
+      );
+      console.log("Transfer NFT instruction added to transaction");
+
+      // Add fee transfer instruction
+      const feeAmount = 0.001; // 0.001 SOL
+      tx = tx.add(
+        transferSol(umi, {
+          source: umi.identity,
+          destination: publicKey(feeRecipientAddress),
+          amount: sol(feeAmount),
+        })
+      );
+      console.log("Fee transfer instruction added to transaction");
+
+      console.log("Transaction built successfully");
+
+      // Send and confirm the bundled transaction
+      console.log("Sending transaction...");
+      const result = await tx.sendAndConfirm(umi);
+      console.log("Transaction completed, result:", result);
+      updateStep(2); // Complete step 2
+      updateStep(3); // Complete step 3 (both are done in one transaction now)
+
+      return { result, uri };
+    } catch (error) {
+      console.error("Error building or sending transaction:", error);
+      throw error;
+    }
   } catch (error) {
     console.error("Error in uploadAndMintNFT:", error);
     throw error;
