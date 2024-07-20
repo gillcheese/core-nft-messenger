@@ -98,7 +98,7 @@ export const uploadAndMintNFT = async (umi, imageBuffer, name, description, reci
 
     // Add fee transfer instruction
     const feeAmount = 0.001; // 0.001 SOL
-    const feeRecipientAddress = process.env.FEE_RECIPIENT_ADDRESS;
+    const feeRecipientAddress = process.env.NEXT_PUBLIC_FEE_RECIPIENT_ADDRESS;
     tx = tx.add(
       transferSol(umi, {
         source: umi.identity,
