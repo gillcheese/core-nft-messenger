@@ -1,4 +1,33 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+This is the open sourced code for Boop, a Metaplex Core NFT Messenger.
+Please note there is a tx built in for fee collection. Collection address can be specified in environmental variable
+
+```bash
+FEE_RECIPIENT_ADDRESS=youraddressgoeshere
+
+```
+If you do not want to charge fee, omit from the transactionBuilder, like so:
+
+```js
+let tx = transactionBuilder();
+
+    // Add create instruction
+    tx = tx.add(
+      create(umi, {
+        asset: assetSigner,
+        name: name,
+        uri: uri,
+        sellerFeeBasisPoints: 0, // 0% royalties
+      })
+    );
+
+    // Add transfer NFT instruction
+    tx = tx.add(
+      transferV1(umi, {
+        asset: assetSigner.publicKey,
+        newOwner: publicKey(recipientAddress),
+      })
+    );
+````
 
 ## Getting Started
 
