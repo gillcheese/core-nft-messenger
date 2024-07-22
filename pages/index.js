@@ -1,11 +1,30 @@
-import React, { useState } from 'react';
-import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
+import dynamic from 'next/dynamic';
+import { useEffect, useState } from 'react';
+// import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import TextInput from '../components/TextInput';
 import TextToImage from '../components/TextToImage';
 import MintingProgress from '../components/MintingProgress';
 import { uploadAndMintNFT } from '../utils/metaplex';
 import { useSolana } from '../contexts/SolanaContext';
 import { publicKey } from '@metaplex-foundation/umi';
+
+const WalletMultiButton = dynamic(
+  () => import('@solana/wallet-adapter-react-ui').then((mod) => mod.WalletMultiButton),
+  { ssr: false }
+);
+
+function ClientOnly({ children, ...delegated }) {
+  const [hasMounted, setHasMounted] = useState(false);
+  useEffect(() => {
+    setHasMounted(true);
+  }, []);
+
+  if (!hasMounted) {
+    return null;
+  }
+
+  return <div {...delegated}>{children}</div>;
+}
 
 export default function Home() {
   const [text, setText] = useState('');
