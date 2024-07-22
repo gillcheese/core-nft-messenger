@@ -1,6 +1,7 @@
+// components/TextToImage.js
 import React, { useRef, useEffect } from 'react';
 
-const TextToImage = ({ text, onImageGenerated }) => {
+const TextToImage = ({ text, onImageGenerated, backgroundColor, fontColor, font }) => {
   const canvasRef = useRef(null);
 
   useEffect(() => {
@@ -12,13 +13,13 @@ const TextToImage = ({ text, onImageGenerated }) => {
     canvas.width = size;
     canvas.height = size;
 
-    // Clear canvas
-    ctx.fillStyle = 'white';
+    // Clear canvas with selected background color
+    ctx.fillStyle = backgroundColor;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     // Set text properties
-    ctx.fillStyle = 'black';
-    ctx.font = '24px Arial';
+    ctx.fillStyle = fontColor;
+    ctx.font = `24px ${font}`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
 
@@ -57,7 +58,7 @@ const TextToImage = ({ text, onImageGenerated }) => {
     // Convert canvas to image URL
     const imageUrl = canvas.toDataURL('image/png');
     onImageGenerated(imageUrl);
-  }, [text, onImageGenerated]);
+  }, [text, onImageGenerated, backgroundColor, fontColor, font]);
 
   return <canvas ref={canvasRef} style={{ display: 'none' }} />;
 };
