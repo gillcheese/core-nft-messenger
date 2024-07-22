@@ -1,12 +1,14 @@
 import dynamic from 'next/dynamic';
 import { useEffect, useState } from 'react';
-// import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import TextInput from '../components/TextInput';
 import TextToImage from '../components/TextToImage';
 import MintingProgress from '../components/MintingProgress';
+import TransactionLink from '../components/TransactionLink';
 import { uploadAndMintNFT } from '../utils/metaplex';
 import { useSolana } from '../contexts/SolanaContext';
 import { publicKey } from '@metaplex-foundation/umi';
+import { base58 } from '@metaplex-foundation/umi/serializers';
+import { bs58 } from '@project-serum/anchor/dist/cjs/utils/bytes';
 
 const WalletMultiButton = dynamic(
   () => import('@solana/wallet-adapter-react-ui').then((mod) => mod.WalletMultiButton),
@@ -90,7 +92,7 @@ export default function Home() {
       const arrayBuffer = await blob.arrayBuffer();
 
       updateMintingStep(0, 'inProgress');
-      const { mintResult, transferResult, uri } = await uploadAndMintNFT(
+      const { result, uri } = await uploadAndMintNFT(
         umi,
         new Uint8Array(arrayBuffer),
         'Message',
@@ -101,8 +103,30 @@ export default function Home() {
           updateMintingStep(step + 1, 'inProgress');
         }
       );
-      setNftResult({ mintResult, transferResult, uri });
+      
+      console.log("Result signature:", result.signature);
+
+      let transactionId;
+      if (result.signature instanceof Uint8Array) {
+        // Use bs58 to encode the Uint8Array directly
+        transactionId = bs58.encode(result.signature);
+      } else if (Array.isArray(result.signature)) {
+        // If it's an array, convert to Uint8Array first
+        transactionId = bs58.encode(new Uint8Array(result.signature));
+      } else if (typeof result.signature === 'string') {
+        // If it's already a string, assume it's the transaction ID
+        transactionId = result.signature;
+      } else {
+        console.error("Unexpected signature format:", result.signature);
+        throw new Error("Unable to process signature");
+      }
+
+      console.log("Transaction ID:", transactionId);
+      
+      setNftResult({ result, uri, transactionId });
       updateMintingStep(3, 'completed');
+      
+      console.log("NFT Result:", { result, uri, transactionId }); // Debug log
     } catch (error) {
       console.error("Error in handleMintNFT:", error);
       alert("Error minting and sending NFT. Please try again.");
@@ -212,6 +236,7 @@ export default function Home() {
               {nftResult && (
                 <div className="pt-6 text-base leading-6 font-bold sm:text-lg sm:leading-7">
                   <p className="text-green-600">NFT minted and sent!</p>
+                  <TransactionLink transactionId={nftResult.transactionId} />
                 </div>
               )}
             </div>
